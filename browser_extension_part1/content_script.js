@@ -29,7 +29,8 @@ let batchScanState = {
   processed: 0,
   successes: 0,
   failures: 0,
-  startTime: null
+  startTime: null,
+  _resumeAttempted: false
 };
 
 // --- 创建或获取 sidebar iframe（并设置 src） ---
@@ -178,14 +179,19 @@ function handleAnalyzeClick() {
     postToSidebar({ type: 'SHOW_JD', payload: { raw: scrapedText } });
 
     // 然后把 JD 发送给 background 做模拟分析
-    chrome.runtime.sendMessage({ type: 'ANALYZE_JD', payload: scrapedText }, (resp) => {
-      // optional ack handling
-      if (chrome.runtime.lastError) {
-        console.warn('chrome.runtime.sendMessage error:', chrome.runtime.lastError);
-      } else {
-        console.log('ANALYZE_JD message sent to background');
-      }
-    });
+    if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+      chrome.runtime.sendMessage({ type: 'ANALYZE_JD', payload: scrapedText }, (resp) => {
+        // optional ack handling
+        if (chrome.runtime.lastError) {
+          console.warn('chrome.runtime.sendMessage error:', chrome.runtime.lastError);
+        } else {
+          console.log('ANALYZE_JD message sent to background');
+        }
+      });
+    } else {
+      console.warn('Chrome runtime API not available');
+      postToSidebar({ type: 'SHOW_ERROR', payload: 'Extension runtime not available. Please reload the page.' });
+    }
 
   } catch (e) {
     console.error('Unhandled error in handleAnalyzeClick:', e);
@@ -466,11 +472,15 @@ async function processJob(jobData) {
       console.log(`Scraped JD for ${jobData.jobId}, length: ${scrapedText.length}`);
 
       // Send to background for analysis
-      chrome.runtime.sendMessage({ 
-        type: 'ANALYZE_JD', 
-        payload: scrapedText,
-        metadata: { jobId: jobData.jobId, batchMode: true }
-      });
+      if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+        chrome.runtime.sendMessage({ 
+          type: 'ANALYZE_JD', 
+          payload: scrapedText,
+          metadata: { jobId: jobData.jobId, batchMode: true }
+        });
+      } else {
+        console.warn('Chrome runtime API not available for sending analysis message');
+      }
 
       return true;
 
@@ -585,22 +595,24 @@ async function waitForDetailPane(expectedJobId) {
 // Save batch state to storage
 function saveBatchState() {
   try {
-    chrome.storage.local.set({
-      'ai-job-tracker-batch-state': {
-        isRunning: batchScanState.isRunning,
-        isPaused: batchScanState.isPaused,
-        currentIndex: batchScanState.currentIndex,
-        processed: batchScanState.processed,
-        successes: batchScanState.successes,
-        failures: batchScanState.failures,
-        queue: batchScanState.queue.map(job => ({
-          jobId: job.jobId,
-          status: job.status,
-          attempts: job.attempts
-        })),
-        startTime: batchScanState.startTime
-      }
-    });
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      chrome.storage.local.set({
+        'ai-job-tracker-batch-state': {
+          isRunning: batchScanState.isRunning,
+          isPaused: batchScanState.isPaused,
+          currentIndex: batchScanState.currentIndex,
+          processed: batchScanState.processed,
+          successes: batchScanState.successes,
+          failures: batchScanState.failures,
+          queue: batchScanState.queue.map(job => ({
+            jobId: job.jobId,
+            status: job.status,
+            attempts: job.attempts
+          })),
+          startTime: batchScanState.startTime
+        }
+      });
+    }
   } catch (e) {
     console.error('Error saving batch state:', e);
   }
@@ -609,6 +621,10 @@ function saveBatchState() {
 // Load batch state from storage
 async function loadBatchState() {
   try {
+    if (typeof chrome === 'undefined' || !chrome.storage || !chrome.storage.local) {
+      return false;
+    }
+    
     const result = await chrome.storage.local.get(['ai-job-tracker-batch-state']);
     const savedState = result['ai-job-tracker-batch-state'];
     
@@ -637,7 +653,8 @@ async function loadBatchState() {
           processed: savedState.processed,
           successes: savedState.successes,
           failures: savedState.failures,
-          startTime: savedState.startTime
+          startTime: savedState.startTime,
+          _resumeAttempted: true
         };
 
         console.log(`Resuming batch scan from job ${batchScanState.currentIndex + 1}/${batchScanState.queue.length}`);
@@ -674,7 +691,9 @@ async function loadBatchState() {
 // Clear batch state from storage
 function clearBatchState() {
   try {
-    chrome.storage.local.remove(['ai-job-tracker-batch-state']);
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      chrome.storage.local.remove(['ai-job-tracker-batch-state']);
+    }
   } catch (e) {
     console.error('Error clearing batch state:', e);
   }
@@ -735,7 +754,7 @@ function isJobsSearchPage() {
 }
 
 // --- 等待目标 DOM 出现并注入按钮 ---
-const observer = setInterval(() => {
+const observer = setInterval(async () => {
   // Always try to inject single job analyze button
   const target = document.querySelector(TARGET_SELECTOR);
   if (target) {
@@ -746,9 +765,10 @@ const observer = setInterval(() => {
   if (isJobsSearchPage()) {
     injectBatchScanButton();
     
-    // Try to resume any pending batch scan
-    if (!batchScanState.isRunning) {
-      loadBatchState();
+    // Try to resume any pending batch scan (only once)
+    if (!batchScanState.isRunning && !batchScanState._resumeAttempted) {
+      batchScanState._resumeAttempted = true;
+      await loadBatchState();
     }
   }
 }, 1000);
