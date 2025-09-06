@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "AI Job Tracker",
+  "version": "0.1.0",
+  "description": "An AI assistant to analyze job descriptions and track applications.",
+  "permissions": ["activeTab", "scripting", "storage"],
+  "background": { "service_worker": "background.js" },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "icons/icon48.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://www.linkedin.com/jobs/search/*"],
+      "js": ["content_script.js"]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["sidebar.html", "sidebar.js", "sidebar.css"],
+      "matches": ["*://www.linkedin.com/*"]
+    }
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

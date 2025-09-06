@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="sidebar.css" />
+  <title>AI Job Tracker Sidebar</title>
+</head>
+<body>
+  <div class="header">
+    <div class="title">AI Job Tracker</div>
+    <button id="close-btn" aria-label="Close sidebar">✕</button>
+  </div>
+
+  <div class="container">
+    <div id="loading-state" class="state">
+      <div class="spinner"></div>
+      <h3>Analyzing Job Description...</h3>
+      <p>Please wait.</p>
+    </div>
+
+    <div id="results-state" class="state" style="display:none;">
+      <h2 id="job-title">-</h2>
+      <p id="company-name"></p>
+      <div class="score-row">
+        <div>Match Score:</div>
+        <div class="score-pill" id="match-score">-</div>
+      </div>
+      <h4>Summary</h4>
+      <p id="match-summary"></p>
+      <h4>Pros</h4>
+      <ul id="match-pros"></ul>
+      <h4>Cons</h4>
+      <ul id="match-cons"></ul>
+    </div>
+
+    <div id="raw-state" class="state">
+      <h4>Raw Job Description (for testing)</h4>
+      <pre id="raw-jd" class="raw-jd">-</pre>
+    </div>
+
+    <div id="error-state" class="state" style="display:none;">
+      <h3>⚠️ Error</h3>
+      <p id="error-message"></p>
+    </div>
+  </div>
+
+  <script src="sidebar.js"></script>
+</body>
+</html>
