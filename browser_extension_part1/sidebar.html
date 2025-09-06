@@ -13,6 +13,43 @@
   </div>
 
   <div class="container">
+    <!-- Batch Scan Controls -->
+    <div id="batch-controls" class="batch-controls" style="display:none;">
+      <div class="batch-header">
+        <h3>Batch Job Scan</h3>
+        <div class="batch-buttons">
+          <button id="pause-batch-btn" class="control-btn" style="display:none;">⏸️ Pause</button>
+          <button id="resume-batch-btn" class="control-btn" style="display:none;">▶️ Resume</button>
+          <button id="stop-batch-btn" class="control-btn" style="display:none;">⏹️ Stop</button>
+        </div>
+      </div>
+      
+      <div class="progress-section">
+        <div class="progress-bar-container">
+          <div id="progress-bar" class="progress-bar" style="width: 0%;"></div>
+        </div>
+        <div class="progress-stats">
+          <span id="progress-text">0 / 0 jobs processed</span>
+          <span id="progress-status" class="status">Ready</span>
+        </div>
+        <div class="progress-details">
+          <div class="stat-item">
+            <span class="stat-label">Success:</span>
+            <span id="success-count" class="stat-value">0</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Failed:</span>
+            <span id="failure-count" class="stat-value">0</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Current:</span>
+            <span id="current-job" class="stat-value">-</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Single Job Analysis States (existing) -->
     <div id="loading-state" class="state">
       <div class="spinner"></div>
       <h3>Analyzing Job Description...</h3>
