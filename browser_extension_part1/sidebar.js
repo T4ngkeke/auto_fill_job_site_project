@@ -1,60 +1,89 @@
-// AI Job Tracker - Sidebar Script
-// This script handles the sidebar UI and communication with the content script
+// sidebar.js (runs inside iframe)
+console.log('🧭 sidebar.js loaded');
 
-// Listen for messages from the parent window (content script)
-window.addEventListener('message', (event) => {
-  if (event.data.type === 'SHOW_LOADING') {
-    showLoadingState();
-  } else if (event.data.type === 'ANALYSIS_COMPLETE') {
-    displayAnalysisResults(event.data.payload);
+function showLoading() {
+  document.getElementById('loading-state').style.display = 'block';
+  document.getElementById('results-state').style.display = 'none';
+  document.getElementById('error-state').style.display = 'none';
+  // keep raw visible for testing
+}
+
+function showError(msg) {
+  document.getElementById('loading-state').style.display = 'none';
+  document.getElementById('results-state').style.display = 'none';
+  document.getElementById('error-state').style.display = 'block';
+  document.getElementById('error-message').innerText = msg || 'Unknown error';
+}
+
+function showResults(data) {
+  document.getElementById('loading-state').style.display = 'none';
+  document.getElementById('error-state').style.display = 'none';
+  document.getElementById('results-state').style.display = 'block';
+
+  document.getElementById('job-title').innerText = data.job_title || '-';
+  document.getElementById('company-name').innerText = data.company || '';
+  document.getElementById('match-score').innerText = (data.match_analysis && data.match_analysis.score) ? data.match_analysis.score + '%' : '-';
+  document.getElementById('match-summary').innerText = (data.match_analysis && data.match_analysis.summary) || '';
+
+  const prosEl = document.getElementById('match-pros');
+  const consEl = document.getElementById('match-cons');
+  prosEl.innerHTML = '';
+  consEl.innerHTML = '';
+
+  const pros = (data.match_analysis && data.match_analysis.pros) || [];
+  const cons = (data.match_analysis && data.match_analysis.cons) || [];
+  for (const p of pros) {
+    const li = document.createElement('li'); li.innerText = p; prosEl.appendChild(li);
+  }
+  for (const c of cons) {
+    const li = document.createElement('li'); li.innerText = c; consEl.appendChild(li);
+  }
+}
+
+function showRawJD(text) {
+  const el = document.getElementById('raw-jd');
+  el.innerText = text || '-';
+}
+
+// 当 iframe 加载完成，主动通知父页面（握手）
+window.addEventListener('load', () => {
+  try {
+    window.parent.postMessage({ type: 'SIDEBAR_READY' }, '*');
+  } catch (e) {
+    console.error('Failed to post SIDEBAR_READY:', e);
   }
 });
 
-// Show loading indicator
-function showLoadingState() {
-  document.getElementById('loading-state').style.display = 'block';
-  document.getElementById('results-state').style.display = 'none';
-}
+// 接收父窗口的消息
+window.addEventListener('message', (ev) => {
+  const msg = ev.data || {};
+  if (!msg.type) return;
+  if (msg.type === 'SHOW_LOADING') {
+    showLoading();
+  } else if (msg.type === 'SHOW_ERROR') {
+    showError(msg.payload || 'Error');
+  } else if (msg.type === 'SHOW_RESULTS') {
+    showResults(msg.payload || {});
+  } else if (msg.type === 'SHOW_JD') {
+    // display raw JD for testing
+    showRawJD(msg.payload && msg.payload.raw ? msg.payload.raw : '');
+    // also keep loading visible until real results come
+  }
+});
 
-// Display the analysis results
-function displayAnalysisResults(analysisData) {
-  // Hide loading state
-  document.getElementById('loading-state').style.display = 'none';
-  
-  // Populate job information
-  document.getElementById('job-title').textContent = analysisData.job_title;
-  document.getElementById('company-name').textContent = analysisData.company;
-  
-  // Populate match analysis
-  document.getElementById('match-score').textContent = analysisData.match_analysis.score;
-  document.getElementById('match-summary').textContent = analysisData.match_analysis.summary;
-  
-  // Populate pros list
-  const prosList = document.getElementById('match-pros');
-  prosList.innerHTML = '';
-  analysisData.match_analysis.pros.forEach(pro => {
-    const listItem = document.createElement('li');
-    listItem.textContent = pro;
-    prosList.appendChild(listItem);
-  });
-  
-  // Populate cons list
-  const consList = document.getElementById('match-cons');
-  consList.innerHTML = '';
-  analysisData.match_analysis.cons.forEach(con => {
-    const listItem = document.createElement('li');
-    listItem.textContent = con;
-    consList.appendChild(listItem);
-  });
-  
-  // Show results state
-  document.getElementById('results-state').style.display = 'block';
-}
+// Close button -> notify parent to hide sidebar
+document.addEventListener('DOMContentLoaded', () => {
+  const closeBtn = document.getElementById('close-btn');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => {
+      try {
+        window.parent.postMessage({ type: 'CLOSE_SIDEBAR' }, '*');
+      } catch (e) {
+        console.error('Failed to post CLOSE_SIDEBAR:', e);
+      }
+    });
+  }
+});
 
-// Close sidebar function
-function closeSidebar() {
-  // Send message to parent window to hide the sidebar
-  window.parent.postMessage({
-    type: 'CLOSE_SIDEBAR'
-  }, '*');
-}
+// initial state
+showLoading();

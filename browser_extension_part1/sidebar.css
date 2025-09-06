@@ -1,54 +1,77 @@
-/* AI Job Tracker - Styles for button and sidebar */
-
-/* Analyze button styles */
-.ai-job-tracker-analyze-btn {
-  background: linear-gradient(135deg, #0073b1, #005885);
-  color: white;
-  border: none;
-  padding: 12px 20px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  margin: 15px 0;
-  box-shadow: 0 2px 8px rgba(0, 115, 177, 0.3);
-  transition: all 0.3s ease;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+:root {
+  --bg: #fff;
+  --muted: #6b7280;
+  --accent: #0a66c2;
+  --pill-bg: #f1f5f9;
 }
 
-.ai-job-tracker-analyze-btn:hover {
-  background: linear-gradient(135deg, #005885, #004066);
-  box-shadow: 0 4px 12px rgba(0, 115, 177, 0.4);
-  transform: translateY(-1px);
+html,body {
+  margin:0;
+  padding:0;
+  font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial;
+  background: var(--bg);
+  color: #111827;
+  height:100%;
 }
 
-.ai-job-tracker-analyze-btn:active {
-  transform: translateY(0);
-  box-shadow: 0 2px 6px rgba(0, 115, 177, 0.3);
+.header {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:10px 12px;
+  border-bottom:1px solid #eee;
+  background: #fafafa;
+  box-sizing:border-box;
+}
+.header .title { font-weight:700; color:var(--accent); }
+#close-btn {
+  border:0;
+  background:transparent;
+  font-size:18px;
+  cursor:pointer;
+  padding:4px 8px;
 }
 
-/* Sidebar iframe styles */
-.ai-job-tracker-sidebar {
-  position: fixed !important;
-  top: 0 !important;
-  right: 0 !important;
-  width: 350px !important;
-  height: 100vh !important;
-  border: none !important;
-  background: white !important;
-  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15) !important;
-  z-index: 2147483647 !important; /* Maximum z-index value */
-  border-left: 1px solid #e0e0e0 !important;
-  resize: none !important;
+.container {
+  padding: 12px;
+  box-sizing: border-box;
+  height: calc(100% - 48px);
+  overflow:auto;
 }
 
-/* Ensure sidebar stays on top of all LinkedIn elements */
-.ai-job-tracker-sidebar iframe {
-  z-index: 2147483647 !important;
+.state { text-align: left; margin-bottom: 12px; }
+
+.spinner {
+  width:36px;
+  height:36px;
+  border-radius:50%;
+  border:4px solid #eee;
+  border-top-color: var(--accent);
+  animation: spin 1s linear infinite;
+  margin: 8px 0;
 }
 
-/* Hide scrollbar for cleaner look when content fits */
-.ai-job-tracker-sidebar::-webkit-scrollbar {
-  width: 0px;
-  background: transparent;
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.score-row { display:flex; align-items:center; gap:8px; margin:8px 0; }
+.score-pill {
+  background: var(--pill-bg);
+  padding:2px 8px;
+  border-radius:8px;
+  color: #0f172a;
+  font-weight:600;
+}
+h2 { margin: 6px 0 4px; font-size: 18px; }
+h4 { margin: 12px 0 6px; font-size: 14px; color: var(--muted); }
+p { margin: 6px 0; color: var(--muted); font-size:13px; }
+ul { padding-left: 18px; color:var(--muted); }
+.raw-jd {
+  background:#f8fafc;
+  border:1px solid #eef2f7;
+  padding:8px;
+  white-space:pre-wrap;
+  font-size:13px;
+  color:#111827;
+  max-height: 300px;
+  overflow:auto;
 }
